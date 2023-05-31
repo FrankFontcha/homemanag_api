@@ -50,14 +50,22 @@ namespace API.Controllers
         }
         
         [HttpGet("")]
-        public ActionResult<IEnumerable<AccessListResultDto>> GetAllAccess()
+        public ActionResult<IEnumerable<AccessListResultDto>> GetAllAccess(int skip = 0, int limit = 500, string sort = "desc")
         {
             try
             {
                 var _access = this._context.Access.Where(x => x.Status != (int)StatusEnum.delete).ToList();
                 var result = this._mapper.Map<IEnumerable<AccessListResultDto>>(_access);
 
-                return Ok(result);
+                var finalresult = new AccessResultDto {
+                    Data = result,
+                    Total = 0,
+                    Limit = limit,
+                    Skip = skip,
+                    Sort = sort
+                };
+
+                return Ok(finalresult);
             }
             catch (System.Exception)
             {
@@ -66,13 +74,13 @@ namespace API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<AccessResultDto>> GetOneAccess(int id)
+        public async Task<ActionResult<AccessListResultDto>> GetOneAccess(int id)
         {
             try
             {
                 var _access = await this._context.Access.Where(x => x.Id == id && x.Status == (int)StatusEnum.enable).FirstOrDefaultAsync();
                 if(_access == null) return NotFound("Access Not Found or Invalid Access ID");
-                var result = this._mapper.Map<AccessResultDto>(_access);
+                var result = this._mapper.Map<AccessListResultDto>(_access);
                 return result;
             }
             catch (System.Exception)

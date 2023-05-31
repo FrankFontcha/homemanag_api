@@ -14,7 +14,7 @@ namespace API.Controllers
 {
     [Authorize(Policy = "IsUser")]
     [Route("/api/business")]
-    public class BusinessController: BaseApiController
+    public class BusinessController : BaseApiController
     {
         private readonly DataContext _context;
         private IMapper _mapper;
@@ -41,12 +41,12 @@ namespace API.Controllers
                 var userid = Int32.Parse(currentUser.FindFirst(ClaimTypes.NameIdentifier).Value);
 
                 var _business = this._mapper.Map<AppBusiness>(data);
-                _business.Reference = Math.Abs(_business.Name.GetHashCode())+"_"+userid;
+                _business.Reference = Math.Abs(_business.Name.GetHashCode()) + "_" + userid;
                 _business.UserId = userid;
                 _business.Status = (int)StatusEnum.enable;
                 _business.CreatedAt = DateTime.UtcNow;
 
-                if (await this._businessCommon.BusinessExist(_business, userid)) return  BadRequest("Business Name already in used");
+                if (await this._businessCommon.BusinessExist(_business, userid)) return BadRequest("Business Name already in used");
 
                 this._context.Business.Add(_business);
 
@@ -75,7 +75,7 @@ namespace API.Controllers
                 return BadRequest("Business can't be created " + ex);
             }
         }
-        
+
         [HttpGet("getall")]
         public async Task<ActionResult<BusinessResultDto>> GetAllBusiness(int skip = 0, int limit = 30, string sort = "desc")
         {
@@ -84,36 +84,30 @@ namespace API.Controllers
                 ClaimsPrincipal currentUser = this.User;
                 var userId = Int32.Parse(currentUser.FindFirst(ClaimTypes.NameIdentifier).Value);
 
-                var query = this._context.Business.Where(x => x.Status != (int)StatusEnum.delete && x.UserId == userId);
+                var query = this._context.Business
+                    .Where(x => x.Status != (int)StatusEnum.delete && x.UserId == userId);
 
+                IQueryable<AppBusiness> orderedQuery;
                 if (sort == "desc")
                 {
-                    var _result = await query.OrderByDescending(x => x.CreatedAt).Skip(skip).Take(limit).ToListAsync();
-                    var result = this._mapper.Map<IEnumerable<BusinessResultListDto>>(_result);
-                    var rs = new BusinessResultDto
-                    {
-                        Data = result,
-                        Limit = limit,
-                        Skip = skip,
-                        Total = query.Count()
-                    };
-
-                    return Ok(rs);
+                    orderedQuery = query.OrderByDescending(x => x.CreatedAt);
                 }
                 else
                 {
-                    var _result = await query.OrderBy(x => x.CreatedAt).Skip(skip).Take(limit).ToListAsync();
-                    var result = this._mapper.Map<IEnumerable<BusinessResultListDto>>(_result);
-                    var rs = new BusinessResultDto
-                    {
-                        Data = result,
-                        Limit = limit,
-                        Skip = skip,
-                        Total = query.Count()
-                    };
-
-                    return Ok(rs);
+                    orderedQuery = query.OrderBy(x => x.CreatedAt);
                 }
+
+                var _result = await orderedQuery.Skip(skip).Take(limit).ToListAsync();
+                var result = this._mapper.Map<IEnumerable<BusinessResultListDto>>(_result);
+                var rs = new BusinessResultDto
+                {
+                    Data = result,
+                    Limit = limit,
+                    Skip = skip,
+                    Total = query.Count()
+                };
+
+                return Ok(rs);
             }
             catch (System.Exception)
             {
@@ -127,7 +121,7 @@ namespace API.Controllers
             try
             {
                 var _business = await this._context.Business.Where(x => x.Id == businessid && x.Status == (int)StatusEnum.enable).Include(p => p.User).FirstOrDefaultAsync();
-                if(_business == null) return NotFound("Business not Found or invalid ID");
+                if (_business == null) return NotFound("Business not Found or invalid ID");
 
                 var result = this._mapper.Map<BusinessResultListDto>(_business);
 
@@ -145,10 +139,10 @@ namespace API.Controllers
             try
             {
                 var _business = this._context.Business.Where(x => x.UserId == userid && x.User.Status == (int)StatusEnum.enable && x.Status == (int)StatusEnum.enable).ToList();
-                if(_business == null) return NotFound("Business not Found or invalid ID");
+                if (_business == null) return NotFound("Business not Found or invalid ID");
 
                 var result = this._mapper.Map<IEnumerable<BusinessResultListDto>>(_business);
-                
+
                 return Ok(result);
             }
             catch (System.Exception)
@@ -189,7 +183,7 @@ namespace API.Controllers
             {
                 var _business = await this._context.Business.Where(x => x.Id == id && x.Status != (int)StatusEnum.delete).FirstOrDefaultAsync();
 
-                if(_business == null) return NotFound("Business not Found");
+                if (_business == null) return NotFound("Business not Found");
 
                 _business.UpdatedAt = DateTime.UtcNow;
                 _business.Name = data.Name;
@@ -218,8 +212,8 @@ namespace API.Controllers
             try
             {
                 var _business = await this._context.Business.Where(x => x.Id == id && x.Status != (int)StatusEnum.delete).FirstOrDefaultAsync();
-                
-                if(_business.Status == (int)StatusEnum.enable) { _business.Status = (int)StatusEnum.disable; } else { _business.Status = (int)StatusEnum.enable; };
+
+                if (_business.Status == (int)StatusEnum.enable) { _business.Status = (int)StatusEnum.disable; } else { _business.Status = (int)StatusEnum.enable; };
                 await this._context.SaveChangesAsync();
 
                 return new DeleteBusinessResultDto

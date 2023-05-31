@@ -83,9 +83,9 @@ namespace API.Controllers.Admin
                 return BadRequest("An error occured or user not found");
             }
         }
-
+        
         [HttpPost("add")]
-        public async Task<ActionResult<AppUser>> RegisterUsers(RegisterDto data)
+        public async Task<ActionResult<ResultAllUserDto>> RegisterUsers(RegisterDto data)
         {
             if (await this._userCommon.UserNameExist(data.Username)) return BadRequest("Username already in used");
 
@@ -113,7 +113,9 @@ namespace API.Controllers.Admin
 
             await this._context.SaveChangesAsync();
 
-            return user;
+            var finalresult = this._mapper.Map<ResultAllUserDto>(user);
+
+            return finalresult;
         }
 
         [HttpDelete("delete")]
