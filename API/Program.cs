@@ -45,8 +45,8 @@ builder.Services.AddAuthentication().AddJwtBearer(JwtBearerDefaults.Authenticati
     };
 });
 
-string[] _Auth_Type_User = {"Admin", "User"};
-string[] _Auth_Type_Admin = {"Admin"};
+string[] _Auth_Type_User = { "Admin", "User" };
+string[] _Auth_Type_Admin = { "Admin" };
 
 builder.Services.AddAuthorization(Options =>
     {
@@ -58,6 +58,7 @@ builder.Services.AddAuthorization(Options =>
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseMiddleware<RoleAccessMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
